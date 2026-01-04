@@ -1,0 +1,204 @@
+{
+  "metadata": {
+    "generated_at": "2024-12-31T23:59:59Z",
+    "user": {
+      "login": "testuser",
+      "id": 12345,
+      "name": "Test User"
+    },
+    "period": {
+      "type": "monthly",
+      "year": 2024,
+      "value": 12,
+      "month": 12,
+      "start_date": "2024-12-01",
+      "end_date": "2024-12-31"
+    },
+    "schema_version": "1.0"
+  },
+  "summary": {
+    "total_commits": 3,
+    "total_prs_opened": 2,
+    "total_prs_merged": 2,
+    "total_prs_reviewed": 1,
+    "total_issues_opened": 2,
+    "total_issues_closed": 1,
+    "total_comments": 1,
+    "repos_contributed_to": 2,
+    "most_active_day": "2024-12-15",
+    "most_active_repo": "testorg/test-repo"
+  },
+  "activity": {
+    "commits": [
+      {
+        "sha": "abc1234def5678abc1234def5678abc1234def567a",
+        "message": "Fix bug in authentication module",
+        "repository": "testorg/test-repo",
+        "date": "2024-12-15T10:30:00Z",
+        "additions": 45,
+        "deletions": 12,
+        "url": "https://github.com/testorg/test-repo/commit/abc1234def5678abc1234def5678abc1234def567a"
+      },
+      {
+        "sha": "abc1234def5678abc1234def5678abc1234def567b",
+        "message": "Add unit tests for auth fix",
+        "repository": "testorg/test-repo",
+        "date": "2024-12-15T10:35:00Z",
+        "additions": 120,
+        "deletions": 5,
+        "url": "https://github.com/testorg/test-repo/commit/abc1234def5678abc1234def5678abc1234def567b"
+      },
+      {
+        "sha": "def5678abc1234def5678abc1234def5678abc123c",
+        "message": "Add new API endpoint for user data",
+        "repository": "testorg/another-repo",
+        "date": "2024-12-16T09:00:00Z",
+        "additions": 200,
+        "deletions": 0,
+        "url": "https://github.com/testorg/another-repo/commit/def5678abc1234def5678abc1234def5678abc123c"
+      }
+    ],
+    "pull_requests": [
+      {
+        "number": 42,
+        "title": "Implement new feature X",
+        "repository": "testorg/test-repo",
+        "state": "merged",
+        "created_at": "2024-12-15T11:00:00Z",
+        "merged_at": "2024-12-16T14:00:00Z",
+        "closed_at": "2024-12-16T14:00:00Z",
+        "commits_count": 3,
+        "additions": 150,
+        "deletions": 30,
+        "url": "https://github.com/testorg/test-repo/pull/42"
+      },
+      {
+        "number": 60,
+        "title": "Update documentation",
+        "repository": "testorg/test-repo",
+        "state": "merged",
+        "created_at": "2024-12-17T08:00:00Z",
+        "merged_at": "2024-12-17T10:00:00Z",
+        "closed_at": "2024-12-17T10:00:00Z",
+        "commits_count": 1,
+        "additions": 50,
+        "deletions": 10,
+        "url": "https://github.com/testorg/test-repo/pull/60"
+      }
+    ],
+    "issues": [
+      {
+        "number": 100,
+        "title": "Bug: Application crashes on startup",
+        "repository": "testorg/test-repo",
+        "state": "open",
+        "created_at": "2024-12-15T14:00:00Z",
+        "closed_at": null,
+        "labels": ["bug", "priority-high"],
+        "url": "https://github.com/testorg/test-repo/issues/100"
+      },
+      {
+        "number": 101,
+        "title": "Feature request: Dark mode support",
+        "repository": "testorg/test-repo",
+        "state": "open",
+        "created_at": "2024-12-16T10:00:00Z",
+        "closed_at": null,
+        "labels": ["enhancement"],
+        "url": "https://github.com/testorg/test-repo/issues/101"
+      }
+    ],
+    "reviews": [
+      {
+        "id": 3500001,
+        "pr_number": 55,
+        "repository": "testorg/another-repo",
+        "state": "APPROVED",
+        "submitted_at": "2024-12-15T15:30:00Z",
+        "body_length": 28
+      }
+    ],
+    "comments": [
+      {
+        "id": 4500001,
+        "type": "issue_comment",
+        "repository": "testorg/test-repo",
+        "issue_number": 100,
+        "created_at": "2024-12-15T16:00:00Z",
+        "body_length": 41
+      }
+    ],
+    "repositories": [
+      {
+        "name": "testorg/another-repo",
+        "commits": 1,
+        "prs": 0,
+        "issues": 0,
+        "reviews": 1
+      },
+      {
+        "name": "testorg/test-repo",
+        "commits": 2,
+        "prs": 2,
+        "issues": 2,
+        "reviews": 0
+      }
+    ]
+  },
+  "metrics": {
+    "pr_metrics": {
+      "avg_commits_per_pr": 2.0,
+      "avg_time_to_merge_hours": 13.5,
+      "avg_time_to_first_review_hours": 1.0,
+      "avg_review_iterations": 1.0,
+      "prs_merged_without_changes": 1,
+      "prs_with_requested_changes": 1
+    },
+    "review_metrics": {
+      "avg_review_turnaround_hours": 0.0,
+      "reviews_with_comments": 1,
+      "approvals": 1,
+      "changes_requested": 0
+    },
+    "engagement_metrics": {
+      "avg_response_time_hours": 0.0,
+      "comment_to_code_ratio": 0.33,
+      "collaboration_score": 4.0
+    },
+    "productivity_by_day": {
+      "Monday": 0,
+      "Tuesday": 0,
+      "Wednesday": 0,
+      "Thursday": 0,
+      "Friday": 0,
+      "Saturday": 0,
+      "Sunday": 5
+    },
+    "productivity_by_hour": {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 1,
+      "9": 1,
+      "10": 2,
+      "11": 1,
+      "12": 0,
+      "13": 0,
+      "14": 1,
+      "15": 1,
+      "16": 1,
+      "17": 0,
+      "18": 0,
+      "19": 0,
+      "20": 0,
+      "21": 0,
+      "22": 0,
+      "23": 0
+    }
+  }
+}

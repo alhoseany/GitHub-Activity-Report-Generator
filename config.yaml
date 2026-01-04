@@ -1,0 +1,108 @@
+# =============================================================================
+# FILE: config.yaml
+# TASKS: UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-8.1, UC-9.1, UC-10.1, UC-11.1
+# PLAN: Sections 3.2, 3.3, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10
+# =============================================================================
+
+# GitHub Activity Report Generator Configuration
+# Priority: CLI > Environment Variables > config.yaml > Defaults
+
+# Period settings (UC-3.1)
+period:
+  default_type: "monthly"  # "monthly" or "quarterly"
+
+# User settings (UC-4.1 | PLAN-3.2)
+# Environment variable: GITHUB_ACTIVITY_USER
+user:
+  username: ""  # empty string = auto-detect from gh CLI
+  organizations: []  # empty = all orgs, or list like ["org1", "org2"]
+
+# Repository filters (UC-5.1 | PLAN-3.3)
+repositories:
+  include_private: true
+  include_forks: false
+  include: []  # whitelist: empty = all repos, or ["owner/*", "owner/repo"]
+  exclude: []  # blacklist: list of repos to exclude ["owner/repo-to-skip"]
+
+# Fetching settings (UC-2.2)
+fetching:
+  high_activity_threshold: 100
+  request_delay: 2.0  # Increased to avoid rate limits
+  max_retries: 3
+  backoff_base: 2.0
+  timeout: 60  # Increased for slow API responses
+
+# Cache settings (UC-8.1 | PLAN-3.5)
+# Environment variable: GITHUB_ACTIVITY_CACHE_DIR
+cache:
+  enabled: true
+  directory: ".cache"
+  ttl_hours: 24
+
+# Output settings (UC-6.1 | PLAN-3.6)
+# Environment variable: GITHUB_ACTIVITY_OUTPUT_DIR
+output:
+  directory: "reports"
+  formats:
+    - json
+    - markdown
+  include_links: true
+  commit_message_format: "truncated"  # full, first_line, truncated
+
+# Metrics settings (UC-7.1 | PLAN-3.7)
+metrics:
+  pr_metrics: true
+  review_metrics: true
+  engagement_metrics: true
+  productivity_patterns: true
+  reaction_breakdown: true
+
+# Logging settings (UC-9.1 | PLAN-3.8)
+# Environment variables: GITHUB_ACTIVITY_LOG_LEVEL, GITHUB_ACTIVITY_LOG_DIR
+logging:
+  level: "INFO"  # DEBUG/INFO/WARNING/ERROR
+  colorize: true
+  show_timestamps: true
+  progress_style: "rich"  # "rich", "simple", or "none"
+  file:
+    enabled: true
+    directory: "logs"
+    organize_by_date: true
+    timestamp_format: "%Y%m%d_%H%M%S"
+    format: "jsonl"  # or "text"
+    separate_errors: true
+    error_file: "errors.log"
+    performance_log: true
+    # Log cleanup settings (UC-10.1 | PLAN-3.9)
+    cleanup:
+      trigger: "startup"  # "startup", "shutdown", "both", or "manual"
+      retention_days: 30
+      retention_days_performance: 14
+      max_total_size_mb: 500
+      max_file_size_mb: 50
+      max_files: 100
+      keep_minimum_days: 7
+      strategy: "oldest_first"  # "oldest_first" or "largest_first"
+      # Error log rotation settings
+      error_log:
+        max_size_mb: 10
+        max_files: 50
+        max_age_days: 365
+        compress_rotated: true
+
+# Report cleanup settings (UC-11.1 | PLAN-3.10)
+output_cleanup:
+  enabled: true
+  trigger: "startup"  # "startup", "shutdown", "both", or "manual"
+  retention_years: 2
+  keep_versions: 3  # versions per period
+  max_total_size_mb: 1000
+  max_file_size_mb: 100
+  max_reports: 500
+  keep_minimum_months: 6
+  strategy: "oldest_first"  # "oldest_first" or "largest_first"
+  archive:
+    enabled: true
+    directory: "reports/archive"
+    compress: true
+    archive_after_days: 365

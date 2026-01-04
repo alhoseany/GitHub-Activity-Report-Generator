@@ -1,0 +1,70 @@
+[
+  {
+    "id": 3500001,
+    "user": {
+      "login": "testuser",
+      "id": 12345,
+      "type": "User"
+    },
+    "body": "LGTM! Great implementation.",
+    "body_length": 28,
+    "state": "APPROVED",
+    "submitted_at": "2024-12-15T15:30:00Z",
+    "commit_id": "abc123def456",
+    "html_url": "https://github.com/testorg/another-repo/pull/55#pullrequestreview-3500001",
+    "pull_request_url": "https://api.github.com/repos/testorg/another-repo/pulls/55",
+    "pr_number": 55,
+    "repository": "testorg/another-repo"
+  },
+  {
+    "id": 3500002,
+    "user": {
+      "login": "reviewer1",
+      "id": 11111,
+      "type": "User"
+    },
+    "body": "Please fix the typo on line 42 and add error handling for the edge case.",
+    "body_length": 75,
+    "state": "CHANGES_REQUESTED",
+    "submitted_at": "2024-12-15T12:00:00Z",
+    "commit_id": "def456ghi789",
+    "html_url": "https://github.com/testorg/test-repo/pull/42#pullrequestreview-3500002",
+    "pull_request_url": "https://api.github.com/repos/testorg/test-repo/pulls/42",
+    "pr_number": 42,
+    "repository": "testorg/test-repo"
+  },
+  {
+    "id": 3500003,
+    "user": {
+      "login": "reviewer1",
+      "id": 11111,
+      "type": "User"
+    },
+    "body": "Changes look good now. Approved!",
+    "body_length": 32,
+    "state": "APPROVED",
+    "submitted_at": "2024-12-16T13:00:00Z",
+    "commit_id": "ghi789jkl012",
+    "html_url": "https://github.com/testorg/test-repo/pull/42#pullrequestreview-3500003",
+    "pull_request_url": "https://api.github.com/repos/testorg/test-repo/pulls/42",
+    "pr_number": 42,
+    "repository": "testorg/test-repo"
+  },
+  {
+    "id": 3500004,
+    "user": {
+      "login": "testuser",
+      "id": 12345,
+      "type": "User"
+    },
+    "body": "",
+    "body_length": 0,
+    "state": "COMMENTED",
+    "submitted_at": "2024-12-17T09:30:00Z",
+    "commit_id": "jkl012mno345",
+    "html_url": "https://github.com/testorg/test-repo/pull/60#pullrequestreview-3500004",
+    "pull_request_url": "https://api.github.com/repos/testorg/test-repo/pulls/60",
+    "pr_number": 60,
+    "repository": "testorg/test-repo"
+  }
+]

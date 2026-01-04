@@ -1,0 +1,117 @@
+[
+  {
+    "id": 1500001,
+    "number": 42,
+    "title": "Implement new feature X",
+    "body": "This PR implements feature X as described in issue #40.\n\n## Changes\n- Added new component\n- Updated tests\n- Fixed related bugs",
+    "state": "closed",
+    "user": {
+      "login": "testuser",
+      "id": 12345,
+      "type": "User"
+    },
+    "created_at": "2024-12-15T11:00:00Z",
+    "updated_at": "2024-12-16T14:00:00Z",
+    "closed_at": "2024-12-16T14:00:00Z",
+    "merged_at": "2024-12-16T14:00:00Z",
+    "merge_commit_sha": "merged123abc456def789",
+    "draft": false,
+    "head": {
+      "ref": "feature/new-feature-x",
+      "sha": "head123abc456"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "base123abc456"
+    },
+    "additions": 150,
+    "deletions": 30,
+    "changed_files": 8,
+    "commits": 3,
+    "commits_count": 3,
+    "review_comments": 5,
+    "comments": 2,
+    "html_url": "https://github.com/testorg/test-repo/pull/42",
+    "repository": "testorg/test-repo",
+    "labels": [
+      {"name": "enhancement"},
+      {"name": "reviewed"}
+    ]
+  },
+  {
+    "id": 1500002,
+    "number": 55,
+    "title": "Refactor database layer",
+    "body": "Refactoring the database layer for better performance.\n\n## Motivation\n- Reduce query complexity\n- Improve caching",
+    "state": "open",
+    "user": {
+      "login": "otheruser",
+      "id": 67890,
+      "type": "User"
+    },
+    "created_at": "2024-12-14T10:00:00Z",
+    "updated_at": "2024-12-15T15:30:00Z",
+    "closed_at": null,
+    "merged_at": null,
+    "merge_commit_sha": null,
+    "draft": false,
+    "head": {
+      "ref": "refactor/database",
+      "sha": "head456def789"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "base456def789"
+    },
+    "additions": 300,
+    "deletions": 150,
+    "changed_files": 12,
+    "commits": 5,
+    "commits_count": 5,
+    "review_comments": 8,
+    "comments": 3,
+    "html_url": "https://github.com/testorg/another-repo/pull/55",
+    "repository": "testorg/another-repo",
+    "labels": [
+      {"name": "refactor"}
+    ]
+  },
+  {
+    "id": 1500003,
+    "number": 60,
+    "title": "Update documentation",
+    "body": "Updates README and API documentation.",
+    "state": "closed",
+    "user": {
+      "login": "testuser",
+      "id": 12345,
+      "type": "User"
+    },
+    "created_at": "2024-12-17T08:00:00Z",
+    "updated_at": "2024-12-17T10:00:00Z",
+    "closed_at": "2024-12-17T10:00:00Z",
+    "merged_at": "2024-12-17T10:00:00Z",
+    "merge_commit_sha": "merged789ghi012",
+    "draft": false,
+    "head": {
+      "ref": "docs/update",
+      "sha": "head789ghi012"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "base789ghi012"
+    },
+    "additions": 50,
+    "deletions": 10,
+    "changed_files": 3,
+    "commits": 1,
+    "commits_count": 1,
+    "review_comments": 0,
+    "comments": 1,
+    "html_url": "https://github.com/testorg/test-repo/pull/60",
+    "repository": "testorg/test-repo",
+    "labels": [
+      {"name": "documentation"}
+    ]
+  }
+]

@@ -1,0 +1,527 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/github-activity/schema.json",
+  "$comment": "UC-12.1 | PLAN-3.11 - Complete JSON Schema for GitHub Activity Reports",
+  "title": "GitHub Activity Report",
+  "description": "Schema for GitHub Activity Report JSON output with full validation",
+  "type": "object",
+  "required": ["metadata", "summary", "activity"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Report metadata including generation info, user, and period",
+      "required": ["generated_at", "user", "period", "schema_version"],
+      "properties": {
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of report generation"
+        },
+        "user": {
+          "type": "object",
+          "description": "GitHub user information",
+          "required": ["login"],
+          "properties": {
+            "login": {
+              "type": "string",
+              "description": "GitHub username",
+              "minLength": 1
+            },
+            "id": {
+              "type": "integer",
+              "description": "GitHub user ID"
+            },
+            "name": {
+              "type": "string",
+              "description": "Display name"
+            }
+          }
+        },
+        "period": {
+          "type": "object",
+          "description": "Report period information",
+          "required": ["type", "year", "start_date", "end_date"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["monthly", "quarterly"],
+              "description": "Period type"
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 2000,
+              "maximum": 2100,
+              "description": "Report year"
+            },
+            "value": {
+              "type": "integer",
+              "description": "Period value (month 1-12 or quarter 1-4)"
+            },
+            "month": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12,
+              "description": "Month number (for monthly reports)"
+            },
+            "quarter": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4,
+              "description": "Quarter number (for quarterly reports)"
+            },
+            "start_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Period start date (YYYY-MM-DD)"
+            },
+            "end_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Period end date (YYYY-MM-DD)"
+            }
+          }
+        },
+        "schema_version": {
+          "type": "string",
+          "description": "Schema version for compatibility checking",
+          "pattern": "^\\d+\\.\\d+$"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "Summary statistics for the report period",
+      "required": ["total_commits", "total_prs_opened", "total_prs_merged", "total_issues_opened", "total_issues_closed", "repos_contributed_to"],
+      "properties": {
+        "total_commits": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of commits"
+        },
+        "total_prs_opened": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total pull requests opened"
+        },
+        "total_prs_merged": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total pull requests merged"
+        },
+        "total_prs_reviewed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total pull requests reviewed"
+        },
+        "total_issues_opened": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total issues opened"
+        },
+        "total_issues_closed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total issues closed"
+        },
+        "total_comments": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total comments made"
+        },
+        "repos_contributed_to": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of unique repositories contributed to"
+        },
+        "most_active_day": {
+          "type": "string",
+          "description": "Most active day by activity count"
+        },
+        "most_active_repo": {
+          "type": "string",
+          "description": "Most active repository"
+        }
+      }
+    },
+    "activity": {
+      "type": "object",
+      "description": "Detailed activity data",
+      "required": ["commits", "pull_requests", "issues", "reviews", "comments", "repositories"],
+      "properties": {
+        "commits": {
+          "type": "array",
+          "description": "List of commits",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sha": {
+                "type": "string",
+                "description": "Commit SHA hash"
+              },
+              "message": {
+                "type": "string",
+                "description": "Commit message"
+              },
+              "repository": {
+                "type": "string",
+                "description": "Repository full name (owner/repo)"
+              },
+              "date": {
+                "type": "string",
+                "description": "Commit date (ISO 8601)"
+              },
+              "additions": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Lines added"
+              },
+              "deletions": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Lines deleted"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Commit URL"
+              }
+            }
+          }
+        },
+        "pull_requests": {
+          "type": "array",
+          "description": "List of pull requests",
+          "items": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "PR number"
+              },
+              "title": {
+                "type": "string",
+                "description": "PR title"
+              },
+              "repository": {
+                "type": "string",
+                "description": "Repository full name"
+              },
+              "state": {
+                "type": "string",
+                "enum": ["open", "closed", "merged"],
+                "description": "PR state"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "Creation timestamp"
+              },
+              "merged_at": {
+                "type": ["string", "null"],
+                "description": "Merge timestamp"
+              },
+              "closed_at": {
+                "type": ["string", "null"],
+                "description": "Close timestamp"
+              },
+              "commits_count": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Number of commits in PR"
+              },
+              "additions": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Lines added"
+              },
+              "deletions": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Lines deleted"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "PR URL"
+              }
+            }
+          }
+        },
+        "issues": {
+          "type": "array",
+          "description": "List of issues",
+          "items": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Issue number"
+              },
+              "title": {
+                "type": "string",
+                "description": "Issue title"
+              },
+              "repository": {
+                "type": "string",
+                "description": "Repository full name"
+              },
+              "state": {
+                "type": "string",
+                "enum": ["open", "closed"],
+                "description": "Issue state"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "Creation timestamp"
+              },
+              "closed_at": {
+                "type": ["string", "null"],
+                "description": "Close timestamp"
+              },
+              "labels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Issue labels"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Issue URL"
+              }
+            }
+          }
+        },
+        "reviews": {
+          "type": "array",
+          "description": "List of PR reviews",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "Review ID"
+              },
+              "pr_number": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Associated PR number"
+              },
+              "repository": {
+                "type": "string",
+                "description": "Repository full name"
+              },
+              "state": {
+                "type": "string",
+                "enum": ["APPROVED", "CHANGES_REQUESTED", "COMMENTED", "DISMISSED", "PENDING"],
+                "description": "Review state"
+              },
+              "submitted_at": {
+                "type": "string",
+                "description": "Submission timestamp"
+              },
+              "body_length": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Length of review body"
+              }
+            }
+          }
+        },
+        "comments": {
+          "type": "array",
+          "description": "List of comments",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "Comment ID"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["issue_comment", "pr_comment", "pr_review_comment", "commit_comment"],
+                "description": "Comment type"
+              },
+              "repository": {
+                "type": "string",
+                "description": "Repository full name"
+              },
+              "issue_number": {
+                "type": "integer",
+                "description": "Associated issue/PR number"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "Creation timestamp"
+              },
+              "body_length": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Length of comment body"
+              }
+            }
+          }
+        },
+        "repositories": {
+          "type": "array",
+          "description": "Activity breakdown by repository",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Repository full name"
+              },
+              "commits": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Number of commits"
+              },
+              "prs": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Number of PRs"
+              },
+              "issues": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Number of issues"
+              },
+              "reviews": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Number of reviews"
+              }
+            }
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Optional calculated metrics",
+      "properties": {
+        "pr_metrics": {
+          "type": "object",
+          "description": "Pull request metrics",
+          "properties": {
+            "avg_commits_per_pr": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Average commits per PR"
+            },
+            "avg_time_to_merge_hours": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Average time to merge in hours"
+            },
+            "avg_time_to_first_review_hours": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Average time to first review in hours"
+            },
+            "avg_review_iterations": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Average review iterations"
+            },
+            "prs_merged_without_changes": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "PRs merged without changes requested"
+            },
+            "prs_with_requested_changes": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "PRs with changes requested"
+            }
+          }
+        },
+        "review_metrics": {
+          "type": "object",
+          "description": "Review metrics",
+          "properties": {
+            "avg_review_turnaround_hours": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Average review turnaround time in hours"
+            },
+            "reviews_with_comments": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Reviews with comments"
+            },
+            "approvals": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of approvals"
+            },
+            "changes_requested": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of changes requested"
+            }
+          }
+        },
+        "engagement_metrics": {
+          "type": "object",
+          "description": "Engagement metrics",
+          "properties": {
+            "avg_response_time_hours": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Average response time in hours"
+            },
+            "comment_to_code_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Comment to code ratio"
+            },
+            "collaboration_score": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Collaboration score"
+            }
+          }
+        },
+        "productivity_by_day": {
+          "type": "object",
+          "description": "Activity count by day of week",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "productivity_by_hour": {
+          "type": "object",
+          "description": "Activity count by hour of day",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "reaction_breakdown": {
+          "type": "object",
+          "description": "Reaction emoji breakdown",
+          "properties": {
+            "counts": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}
