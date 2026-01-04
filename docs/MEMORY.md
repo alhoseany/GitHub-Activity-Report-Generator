@@ -18,6 +18,8 @@
 
 **Goal**: Build a CLI tool that generates GitHub activity reports (monthly/quarterly) for a user, outputting JSON and Markdown files.
 
+**Repository**: https://github.com/alhoseany/GitHub-Activity-Report-Generator
+
 **Tech Stack**: Python 3.11+, Click CLI, PyYAML, jsonschema, rich
 
 **Key Features**:
@@ -34,10 +36,13 @@
 | Document | Purpose | When to Use |
 |----------|---------|-------------|
 | `MEMORY.md` | Project context & progress | Start/end of session |
+| `PROJECT.md` | Original requirements & goals | Reference project scope |
 | `implement.md` | Step-by-step code guide | Primary implementation reference |
 | `tasks-by-usecase.md` | Specs & acceptance criteria | Verify task completion |
 | `plan-v2.md` | Full specifications | Detailed reference |
 | `tasks.md` | Technical task breakdown | Cross-reference TASK-X.Y IDs |
+| `../CLAUDE.md` | Claude Code guidance | AI agent onboarding (root level) |
+| `../README.md` | Public documentation | User-facing docs (root level) |
 
 ---
 
@@ -132,11 +137,15 @@ None currently.
 ## File Structure (Current)
 
 ```
-.scripts/github-activity/
+github-activity/
 ├── generate_report.py          # CLI entry point
 ├── config.yaml                 # User configuration
 ├── requirements.txt            # Dependencies
 ├── pytest.ini                  # Test configuration
+├── CLAUDE.md                   # Claude Code guidance
+├── README.md                   # Public documentation
+├── LICENSE                     # MIT License
+├── .gitignore                  # Git ignore rules
 ├── src/
 │   ├── __init__.py
 │   ├── orchestrator.py         # Main pipeline
@@ -189,6 +198,7 @@ None currently.
 ├── .cache/
 └── docs/
     ├── MEMORY.md               # This file
+    ├── PROJECT.md              # Original requirements
     ├── implement.md            # Implementation guide
     ├── tasks-by-usecase.md     # Use case tasks
     ├── tasks.md                # Technical tasks
@@ -199,6 +209,28 @@ None currently.
 ---
 
 ## Progress Log
+
+### 2026-01-04 - Git Init & GitHub Publish
+
+**Session Summary**:
+- Initialized git repository
+- Published to GitHub
+- Created public documentation (README.md with playful tone)
+- Created CLAUDE.md for AI agent onboarding
+- Created PROJECT.md with original requirements
+- Set up .gitignore (cache, logs, reports, research, etc.)
+- Verified all docs for consistency
+- Removed personal info from config.yaml before commit
+
+**Files Created**:
+- `CLAUDE.md` - Claude Code guidance
+- `README.md` - Public documentation with emojis
+- `docs/PROJECT.md` - Original requirements
+- `.gitignore` - Git ignore rules
+
+**Repository**: https://github.com/alhoseany/GitHub-Activity-Report-Generator
+
+---
 
 ### 2026-01-04 - Documentation Consistency Update
 
@@ -282,4 +314,4 @@ When ending a session, copy this template and fill in:
 ---
 
 *Last Updated: 2026-01-04*
-*Last Session: Documentation consistency update, implementation complete*
+*Last Session: Git init, GitHub publish, public docs created*
