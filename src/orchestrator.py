@@ -80,6 +80,12 @@ from .reporters.json_report import JsonReporter
 from .reporters.markdown_report import MarkdownReporter
 from .verifier import ReportVerifier
 
+try:
+    from .reporters.chart_report import ChartReporter
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
+
 if TYPE_CHECKING:
     from .utils.logger import Logger
 
@@ -643,6 +649,18 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
             md_path = reporter.generate(data, year, period_type, period_value, metrics)
             files.append(md_path)
             self._log_info(f"Generated Markdown: {md_path}")
+
+        if "charts" in output_formats:
+            if HAS_MATPLOTLIB:
+                reporter = ChartReporter(
+                    output_dir=output_dir,
+                    username=self.username,
+                )
+                chart_path = reporter.generate(data, year, period_type, period_value, metrics)
+                files.append(chart_path)
+                self._log_info(f"Generated Charts: {chart_path}")
+            else:
+                self._log_info("Charts requested but matplotlib not installed. Skipping.")
 
         return files
 

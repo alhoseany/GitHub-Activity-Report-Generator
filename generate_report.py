@@ -126,7 +126,7 @@ class MutuallyExclusiveOption(click.Option):  # UC-3.1 | PLAN-3.1
 @click.option(
     "--format", "-f",
     "output_format",
-    type=click.Choice(["json", "markdown", "both"]),
+    type=click.Choice(["json", "markdown", "charts", "both", "all"]),
     default=None,
     help="Output format (default: from config)"  # UC-6.1 | PLAN-3.6
 )
@@ -248,7 +248,9 @@ def main(
         period_value = get_current_month()
 
     # Determine output formats  # UC-6.1 | PLAN-3.6
-    if output_format == "both":
+    if output_format == "all":
+        output_formats = ["json", "markdown", "charts"]
+    elif output_format == "both":
         output_formats = ["json", "markdown"]
     elif output_format:
         output_formats = [output_format]

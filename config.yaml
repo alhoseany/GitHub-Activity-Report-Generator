@@ -46,6 +46,7 @@ output:
   formats:
     - json
     - markdown
+    # - charts  # Requires matplotlib: pip install matplotlib
   include_links: true
   commit_message_format: "truncated"  # full, first_line, truncated
 

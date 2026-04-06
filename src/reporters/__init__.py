@@ -26,11 +26,13 @@ Usage:
 
 from .json_report import JsonReporter
 from .markdown_report import MarkdownReporter
+from .chart_report import ChartReporter
 from .validator import ReportValidator, validate_report
 
 __all__ = [
     "JsonReporter",
     "MarkdownReporter",
+    "ChartReporter",
     "ReportValidator",
     "validate_report",
 ]
