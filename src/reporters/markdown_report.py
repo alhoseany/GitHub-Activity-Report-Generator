@@ -186,6 +186,15 @@ class MarkdownReporter:  # UC-2.4, UC-6.1 | PLAN-5.2
             lines.extend(self._format_reviews_section(data.reviews))
             lines.append("")
 
+        # Release Contributions
+        contributed_releases = [
+            r for r in data.releases
+            if r.get("user_commits", 0) > 0 or r.get("user_reviewed_prs", 0) > 0
+        ]
+        if contributed_releases:
+            lines.extend(self._format_releases_section(contributed_releases))
+            lines.append("")
+
         # Metrics (if provided)  # UC-7.1 | PLAN-3.7
         if metrics:
             lines.extend(self._format_metrics_section(metrics))
@@ -333,9 +342,67 @@ class MarkdownReporter:  # UC-2.4, UC-6.1 | PLAN-5.2
                 pr_num = review.get("pr_number", "")
                 date_str = (review.get("submitted_at") or "")[:10]
 
-                lines.append(f"- {repo}#{pr_num} ({date_str})")
+                if self.include_links and repo and pr_num:
+                    pr_url = f"https://github.com/{repo}/pull/{pr_num}"
+                    lines.append(f"- [{repo}#{pr_num}]({pr_url}) ({date_str})")
+                else:
+                    lines.append(f"- {repo}#{pr_num} ({date_str})")
 
             lines.append("")
+
+        return lines
+
+    def _format_releases_section(
+        self,
+        releases: list[dict[str, Any]]
+    ) -> list[str]:  # UC-2.4, UC-6.1 | PLAN-5.2
+        """Format release contributions as markdown table."""
+        lines: list[str] = ["## Release Contributions", ""]
+
+        lines.append("| Release | Repository | Commits (User/Total) | Reviews (User/Total PRs) | Weight |")
+        lines.append("|---------|-----------|---------------------|------------------------|--------|")
+
+        for release in releases:
+            tag = release.get("tag_name", "")
+            repo = release.get("repository", "")
+            user_commits = release.get("user_commits", 0)
+            total_commits = release.get("total_commits", 0)
+            user_reviews = release.get("user_reviewed_prs", 0)
+            total_prs = release.get("total_prs", 0)
+            weight = release.get("contribution_weight", 0.0)
+
+            # UC-6.1 | PLAN-3.6 - respect include_links setting
+            if self.include_links and release.get("html_url"):
+                tag_display = f"[{tag}]({release['html_url']})"
+            else:
+                tag_display = tag
+
+            # Add monorepo indicator
+            if release.get("is_monorepo_release"):
+                tag_display += " *"
+
+            # Add anomaly indicator
+            anomalies = release.get("anomalies", [])
+            if anomalies:
+                tag_display += " ⚠"
+
+            lines.append(
+                f"| {tag_display} | {repo} | {user_commits}/{total_commits} | "
+                f"{user_reviews}/{total_prs} | {weight:.1f}% |"
+            )
+
+        # Add legend if needed
+        has_monorepo = any(r.get("is_monorepo_release") for r in releases)
+        has_anomalies = any(r.get("anomalies") for r in releases)
+        if has_monorepo or has_anomalies:
+            lines.append("")
+            if has_monorepo:
+                lines.append("\\* Monorepo release (may include changes from other packages)")
+            if has_anomalies:
+                anomaly_releases = [r for r in releases if r.get("anomalies")]
+                for r in anomaly_releases:
+                    for a in r["anomalies"]:
+                        lines.append(f"⚠ {r['tag_name']}: {a.replace('_', ' ')}")
 
         return lines
 
@@ -424,6 +491,16 @@ class MarkdownReporter:  # UC-2.4, UC-6.1 | PLAN-5.2
             if "counts" in breakdown and breakdown["counts"]:
                 for emoji, count in sorted(breakdown["counts"].items(), key=lambda x: -x[1]):
                     lines.append(f"- **{emoji}:** {count}")
+            lines.append("")
+
+        # Release Metrics - only if present  # UC-7.1 | PLAN-3.7
+        if "release_metrics" in metrics:
+            rm = metrics["release_metrics"]
+            lines.append("### Release Metrics")
+            lines.append("")
+            lines.append(f"- **Releases Contributed To:** {rm.get('releases_contributed_to', 0)}")
+            lines.append(f"- **Total Releases in Period:** {rm.get('total_releases_in_period', 0)}")
+            lines.append(f"- **Avg Contribution Weight:** {rm.get('avg_contribution_weight', 0):.1f}%")
             lines.append("")
 
         return lines

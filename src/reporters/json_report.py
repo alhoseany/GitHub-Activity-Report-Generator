@@ -181,6 +181,10 @@ class JsonReporter:  # UC-2.4, UC-6.1 | PLAN-5.1
             "issues": self._format_issues(data.issues),
             "reviews": self._format_reviews(data.reviews),
             "comments": self._format_comments(data.comments),
+            "releases": self._format_releases([
+                r for r in data.releases
+                if r.get("user_commits", 0) > 0 or r.get("user_reviewed_prs", 0) > 0
+            ]),
             "repositories": self._format_repositories(data),
         }
 
@@ -310,6 +314,37 @@ class JsonReporter:  # UC-2.4, UC-6.1 | PLAN-5.1
             # UC-6.1 | PLAN-3.6 - respect include_links setting
             if self.include_links:
                 item["url"] = comment.get("url", "")
+
+            formatted.append(item)
+
+        return formatted
+
+    def _format_releases(
+        self,
+        releases: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:  # UC-2.4, UC-6.1 | PLAN-5.1
+        """Format release data for JSON output."""
+        formatted: list[dict[str, Any]] = []
+
+        for release in releases:
+            item: dict[str, Any] = {
+                "tag_name": release.get("tag_name", ""),
+                "name": release.get("name", ""),
+                "repository": release.get("repository", ""),
+                "published_at": release.get("published_at", ""),
+                "total_commits": release.get("total_commits", 0),
+                "user_commits": release.get("user_commits", 0),
+                "total_prs": release.get("total_prs", 0),
+                "user_reviewed_prs": release.get("user_reviewed_prs", 0),
+                "contribution_weight": release.get("contribution_weight", 0.0),
+                "is_monorepo_release": release.get("is_monorepo_release", False),
+                "anomalies": release.get("anomalies", []),
+                "detection_method": release.get("detection_method", ""),
+            }
+
+            # UC-6.1 | PLAN-3.6 - respect include_links setting
+            if self.include_links:
+                item["html_url"] = release.get("html_url", "")
 
             formatted.append(item)
 

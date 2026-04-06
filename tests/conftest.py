@@ -219,7 +219,8 @@ def metrics_config():
         review_metrics=True,
         engagement_metrics=True,
         productivity_patterns=True,
-        reaction_breakdown=True
+        reaction_breakdown=True,
+        release_metrics=True,
     )
 
 

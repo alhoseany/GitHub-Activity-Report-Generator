@@ -14,6 +14,8 @@ A Python CLI tool that transforms your GitHub activity into beautiful, comprehen
 | 🎯 **Repository Filtering** | Whitelist/blacklist with glob patterns — focus on what matters |
 | ⚡ **Smart Caching** | Configurable TTL to keep things speedy |
 | 📝 **Multiple Formats** | JSON (schema-validated) + Markdown — take your pick |
+| 🚀 **Release Contributions** | Track your impact on releases — commits authored + PRs reviewed |
+| ✅ **Report Verification** | Spot-check report data against live GitHub API |
 
 ## 🛠️ Requirements
 
@@ -81,6 +83,7 @@ python generate_report.py --no-cache
 | `--log-level` | | DEBUG, INFO, WARNING, ERROR |
 | `--config` | `-c` | Path to config file |
 | `--dry-run` | | Show what would be fetched |
+| `--verify` | | Verify report data against GitHub API |
 
 ## ⚙️ Configuration
 
@@ -120,6 +123,55 @@ reports/
 
 Run multiple times? No problem — versions auto-increment (`-1`, `-2`, `-3`).
 
+## 🚀 Release Contributions
+
+Track your impact on releases across repositories. The tool automatically detects releases using the GitHub Releases API (with a tags fallback for repos without formal releases) and calculates your contribution weight based on commits authored and PRs reviewed.
+
+```bash
+# Reports include release contributions by default
+python generate_report.py -q 1 -y 2026
+
+# Example output in the Markdown report:
+# ## Release Contributions
+# | Release | Repository | Commits (User/Total) | Reviews (User/Total PRs) | Weight |
+# |---------|-----------|---------------------|------------------------|--------|
+# | 3.6.6   | org/repo  | 15/163              | 11/19                  | 28.6%  |
+```
+
+**Features:**
+- Tiered detection: GitHub Releases API → Tags API fallback
+- Monorepo support: auto-detects scoped tags (e.g., `plugin-name/1.0.0`)
+- Anomaly detection: flags huge (500+ commits), empty, or rapid releases
+- Contribution weight: 60% commit share + 40% review share
+- Configurable: disable with `release_metrics: false` in config.yaml
+
+## ✅ Report Verification
+
+Verify your report data against the live GitHub API after generation:
+
+```bash
+python generate_report.py -m 3 -y 2026 --verify
+```
+
+The verifier spot-checks:
+- Internal consistency (summary counts match activity data)
+- Comment uniqueness (no duplicates)
+- Commit SHAs exist on GitHub
+- PR and issue states match GitHub
+- Review states match GitHub
+- Release data matches GitHub
+
+```
+Verification: PASSED
+  ✓ internal_consistency: 12/12
+  ✓ comment_uniqueness: 93/93
+  ✓ commit_spot_check: 5/5
+  ✓ pr_state_verification: 3/3
+  ✓ review_spot_check: 5/5
+  ✓ issue_state_verification: 4/4
+  ✓ release_spot_check: 5/5
+```
+
 ## 🧪 Testing
 
 ```bash
@@ -141,6 +193,31 @@ This project was created using **spec-driven development** — a detailed plan w
 - 🧠 `MEMORY.md` — Project context for AI sessions
 - 📐 `plan-v2.md` — Full specifications
 - ✅ `tasks.md` — Implementation tracking
+
+## 📋 Changelog
+
+### v2.0.0 (2026-04-06)
+
+**New Features:**
+- 🚀 **Release Contribution Tracking** — Detects releases across repos, calculates contribution weight from commits + reviews, supports monorepos and tags-only repos
+- ✅ **Post-Generation Verification** (`--verify`) — Spot-checks report data against live GitHub API
+- 🔗 **Review PR Links** — Reviews in Markdown reports now link to the PR on GitHub
+
+**Bug Fixes:**
+- Fixed comment deduplication — prevented cross-source duplicates between events API and direct API
+- Fixed missing merged PRs — now catches PRs created before the period but merged within it
+- Fixed missing reviews — now captures reviews on PRs created before the reporting period
+- Fixed missing issues — now captures issues closed/updated in period but created before it
+- Fixed PR review count — dedup now uses (repo, pr_number) instead of pr_number alone
+
+**Tests:**
+- 281 tests (up from 213), all passing
+- New test suites for release fetcher and report verifier
+
+### v1.0.0 (2026-01-04)
+- Initial release with full pipeline: fetchers, aggregator, metrics, reporters
+- Monthly and quarterly reports in JSON + Markdown
+- Adaptive fetching, caching, repository filtering, cleanup
 
 ## 📜 License
 

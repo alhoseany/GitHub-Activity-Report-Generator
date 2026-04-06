@@ -311,3 +311,206 @@ class TestReporterIntegration:  # UC-13.2 | PLAN-4
 
         # Summary should show zeros
         assert report["summary"]["total_commits"] == 0
+
+
+class TestMarkdownReleaseSection:  # UC-13.2 | PLAN-4
+    """Tests for release contributions in Markdown report."""
+
+    def test_release_table_rendered(self, temp_reports_dir):
+        """Release contributions table should appear in markdown."""
+        data = AggregatedData(
+            commits=[], pull_requests=[], issues=[], reviews=[], comments=[],
+            releases=[
+                {
+                    "tag_name": "1.0.0",
+                    "name": "v1.0.0",
+                    "repository": "org/repo",
+                    "published_at": "2024-12-15T00:00:00Z",
+                    "html_url": "https://github.com/org/repo/releases/tag/1.0.0",
+                    "total_commits": 50,
+                    "user_commits": 10,
+                    "total_prs": 8,
+                    "user_reviewed_prs": 3,
+                    "contribution_weight": 27.0,
+                    "is_monorepo_release": False,
+                    "anomalies": [],
+                    "detection_method": "github_releases",
+                },
+            ],
+            start_date=date(2024, 12, 1),
+            end_date=date(2024, 12, 31),
+            username="testuser",
+            repositories=["org/repo"],
+        )
+
+        reporter = MarkdownReporter(output_dir=str(temp_reports_dir), include_links=True)
+        report = reporter.build_report(data, 2024, "monthly", 12, None)
+
+        assert "## Release Contributions" in report
+        assert "10/50" in report   # User/Total commits
+        assert "3/8" in report     # User/Total PRs
+        assert "27.0%" in report   # Contribution weight
+
+    def test_zero_contribution_releases_filtered(self, temp_reports_dir):
+        """Releases with no user contribution should not appear."""
+        data = AggregatedData(
+            commits=[], pull_requests=[], issues=[], reviews=[], comments=[],
+            releases=[
+                {
+                    "tag_name": "1.0.0",
+                    "repository": "org/repo",
+                    "user_commits": 0,
+                    "user_reviewed_prs": 0,
+                    "total_commits": 50,
+                    "total_prs": 8,
+                    "contribution_weight": 0.0,
+                    "is_monorepo_release": False,
+                    "anomalies": [],
+                    "detection_method": "github_releases",
+                    "name": "",
+                    "published_at": "2024-12-15",
+                    "html_url": "",
+                },
+            ],
+            start_date=date(2024, 12, 1),
+            end_date=date(2024, 12, 31),
+            username="testuser",
+            repositories=["org/repo"],
+        )
+
+        reporter = MarkdownReporter(output_dir=str(temp_reports_dir), include_links=True)
+        report = reporter.build_report(data, 2024, "monthly", 12, None)
+
+        assert "## Release Contributions" not in report
+
+
+class TestMarkdownReviewLinks:  # UC-13.2 | PLAN-4
+    """Tests for review PR links in Markdown report."""
+
+    def test_reviews_have_pr_links(self, temp_reports_dir):
+        """Reviews should link to the PR when include_links is enabled."""
+        data = AggregatedData(
+            commits=[], pull_requests=[], issues=[],
+            reviews=[
+                {
+                    "pr_number": 42,
+                    "repository": "org/repo",
+                    "state": "APPROVED",
+                    "submitted_at": "2024-12-15T00:00:00Z",
+                },
+            ],
+            comments=[], releases=[],
+            start_date=date(2024, 12, 1),
+            end_date=date(2024, 12, 31),
+            username="testuser",
+            repositories=["org/repo"],
+        )
+
+        reporter = MarkdownReporter(output_dir=str(temp_reports_dir), include_links=True)
+        report = reporter.build_report(data, 2024, "monthly", 12, None)
+
+        assert "https://github.com/org/repo/pull/42" in report
+        assert "[org/repo#42]" in report
+
+    def test_reviews_no_links_when_disabled(self, temp_reports_dir):
+        """Reviews should not have links when include_links is disabled."""
+        data = AggregatedData(
+            commits=[], pull_requests=[], issues=[],
+            reviews=[
+                {
+                    "pr_number": 42,
+                    "repository": "org/repo",
+                    "state": "APPROVED",
+                    "submitted_at": "2024-12-15T00:00:00Z",
+                },
+            ],
+            comments=[], releases=[],
+            start_date=date(2024, 12, 1),
+            end_date=date(2024, 12, 31),
+            username="testuser",
+            repositories=["org/repo"],
+        )
+
+        reporter = MarkdownReporter(output_dir=str(temp_reports_dir), include_links=False)
+        report = reporter.build_report(data, 2024, "monthly", 12, None)
+
+        assert "https://github.com" not in report
+        assert "- org/repo#42" in report
+
+
+class TestJsonReleaseOutput:  # UC-13.2 | PLAN-4
+    """Tests for release data in JSON report."""
+
+    def test_json_releases_filtered(self, temp_reports_dir):
+        """JSON activity.releases should only include contributed releases."""
+        data = AggregatedData(
+            commits=[], pull_requests=[], issues=[], reviews=[], comments=[],
+            releases=[
+                {
+                    "tag_name": "1.0",
+                    "name": "",
+                    "repository": "org/repo",
+                    "published_at": "2024-12-15",
+                    "html_url": "",
+                    "total_commits": 10,
+                    "user_commits": 5,
+                    "total_prs": 2,
+                    "user_reviewed_prs": 1,
+                    "contribution_weight": 50.0,
+                    "is_monorepo_release": False,
+                    "anomalies": [],
+                    "detection_method": "github_releases",
+                },
+                {
+                    "tag_name": "2.0",
+                    "name": "",
+                    "repository": "org/repo",
+                    "published_at": "2024-12-20",
+                    "html_url": "",
+                    "total_commits": 20,
+                    "user_commits": 0,
+                    "total_prs": 5,
+                    "user_reviewed_prs": 0,
+                    "contribution_weight": 0.0,
+                    "is_monorepo_release": False,
+                    "anomalies": [],
+                    "detection_method": "github_releases",
+                },
+            ],
+            start_date=date(2024, 12, 1),
+            end_date=date(2024, 12, 31),
+            username="testuser",
+            repositories=["org/repo"],
+        )
+
+        reporter = JsonReporter(output_dir=str(temp_reports_dir), include_links=True)
+        report = reporter.build_report(data, 2024, "monthly", 12, None)
+
+        # Only the contributed release should be in activity
+        assert len(report["activity"]["releases"]) == 1
+        assert report["activity"]["releases"][0]["tag_name"] == "1.0"
+
+    def test_json_release_metrics(self, temp_reports_dir):
+        """Release metrics should appear when provided."""
+        data = AggregatedData(
+            commits=[], pull_requests=[], issues=[], reviews=[], comments=[], releases=[],
+            start_date=date(2024, 12, 1),
+            end_date=date(2024, 12, 31),
+            username="testuser",
+            repositories=[],
+        )
+
+        metrics: dict[str, Any] = {
+            "release_metrics": {
+                "releases_contributed_to": 3,
+                "total_releases_in_period": 5,
+                "avg_contribution_weight": 35.0,
+                "releases": [],
+            }
+        }
+
+        reporter = JsonReporter(output_dir=str(temp_reports_dir), include_links=True)
+        report = reporter.build_report(data, 2024, "monthly", 12, metrics)
+
+        assert "release_metrics" in report["metrics"]
+        assert report["metrics"]["release_metrics"]["releases_contributed_to"] == 3

@@ -33,6 +33,7 @@ class AggregatedData:  # UC-2.3 | PLAN-4.1
     issues: list[dict[str, Any]] = field(default_factory=list)
     reviews: list[dict[str, Any]] = field(default_factory=list)
     comments: list[dict[str, Any]] = field(default_factory=list)
+    releases: list[dict[str, Any]] = field(default_factory=list)
 
     # Metadata
     start_date: date | None = None
@@ -58,7 +59,10 @@ class AggregatedData:  # UC-2.3 | PLAN-4.1
     @property
     def total_prs_reviewed(self) -> int:  # UC-2.3 | PLAN-4.1
         """Total unique PRs reviewed."""
-        return len(set(r.get("pr_number") for r in self.reviews if r.get("pr_number")))
+        return len(set(
+            (r.get("repository", ""), r.get("pr_number"))
+            for r in self.reviews if r.get("pr_number")
+        ))
 
     @property
     def total_issues_opened(self) -> int:  # UC-2.3 | PLAN-4.1
@@ -80,6 +84,12 @@ class AggregatedData:  # UC-2.3 | PLAN-4.1
         """Number of unique repositories contributed to."""
         return len(self.repositories)
 
+    @property
+    def releases_contributed_to(self) -> int:
+        """Number of releases user contributed to (via commits or reviews)."""
+        return len([r for r in self.releases
+                    if r.get("user_commits", 0) > 0 or r.get("user_reviewed_prs", 0) > 0])
+
     def get_summary(self) -> dict[str, Any]:  # UC-2.3 | PLAN-4.1
         """
         Get summary statistics.
@@ -96,6 +106,7 @@ class AggregatedData:  # UC-2.3 | PLAN-4.1
             "total_issues_closed": self.total_issues_closed,
             "total_comments": self.total_comments,
             "repos_contributed_to": self.repos_contributed_to,
+            "releases_contributed_to": self.releases_contributed_to,
             "most_active_day": self._get_most_active_day(),
             "most_active_repo": self._get_most_active_repo(),
         }
@@ -182,6 +193,7 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
         issues: list[dict[str, Any]] | None = None,
         reviews: list[dict[str, Any]] | None = None,
         comments: list[dict[str, Any]] | None = None,
+        releases: list[dict[str, Any]] | None = None,
         **kwargs  # UC-7.1 | PLAN-3.7 - Accept extra keys like 'events' without error
     ) -> AggregatedData:  # UC-2.3 | PLAN-4.1
         """
@@ -193,6 +205,7 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
             issues: List of issue records
             reviews: List of review records
             comments: List of comment records
+            releases: List of release records
             **kwargs: Additional data (e.g., events for metrics calculation)
 
         Returns:
@@ -209,13 +222,14 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
         commits = self._filter_by_date(commits, "date")
         # Filter PRs - keep if created in period OR has activity in period
         pull_requests = self._filter_prs_by_date(pull_requests)
-        issues = self._filter_by_date(issues, "created_at")
+        issues = self._filter_issues_by_date(issues)
         reviews = self._filter_by_date(reviews, "submitted_at")
         comments = self._filter_by_date(comments, "created_at")
+        releases = self._filter_by_date(releases or [], "published_at")
 
         # Collect unique repositories
         repositories = self._collect_repositories(
-            commits, pull_requests, issues, reviews
+            commits, pull_requests, issues, reviews, releases
         )
 
         return AggregatedData(
@@ -224,6 +238,7 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
             issues=issues,
             reviews=reviews,
             comments=comments,
+            releases=releases,
             start_date=self.start_date,
             end_date=self.end_date,
             username=self.username,
@@ -264,6 +279,8 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
 
         Keeps PRs that either:
         - Were created in the period, OR
+        - Were merged in the period, OR
+        - Were updated in the period, OR
         - Have the has_period_activity flag (activity in period)
 
         Args:
@@ -273,6 +290,8 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
             list[dict]: Filtered PRs
         """
         filtered: list[dict[str, Any]] = []
+        start_str = self.start_date.isoformat()
+        end_str = self.end_date.isoformat()
 
         for pr in pull_requests:
             # Keep if has activity in period
@@ -280,11 +299,43 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
                 filtered.append(pr)
                 continue
 
-            # Otherwise check created_at
-            date_str = self._extract_date(pr, "created_at")
-            if date_str:
-                if self.start_date.isoformat() <= date_str <= self.end_date.isoformat():
+            # Check date fields: created_at, merged_at, updated_at
+            for date_field in ("created_at", "merged_at", "updated_at"):
+                date_str = self._extract_date(pr, date_field)
+                if date_str and start_str <= date_str <= end_str:
                     filtered.append(pr)
+                    break
+
+        return filtered
+
+    def _filter_issues_by_date(
+        self,
+        issues: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:  # UC-2.3 | PLAN-4.1
+        """
+        Filter issues by date range, keeping issues with period activity.
+
+        Keeps issues that either:
+        - Were created in the period, OR
+        - Were closed in the period, OR
+        - Were updated in the period
+
+        Args:
+            issues: List of issues to filter
+
+        Returns:
+            list[dict]: Filtered issues
+        """
+        filtered: list[dict[str, Any]] = []
+        start_str = self.start_date.isoformat()
+        end_str = self.end_date.isoformat()
+
+        for issue in issues:
+            for date_field in ("created_at", "closed_at", "updated_at"):
+                date_str = self._extract_date(issue, date_field)
+                if date_str and start_str <= date_str <= end_str:
+                    filtered.append(issue)
+                    break
 
         return filtered
 
@@ -314,6 +365,7 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
         pull_requests: list[dict[str, Any]],
         issues: list[dict[str, Any]],
         reviews: list[dict[str, Any]],
+        releases: list[dict[str, Any]] | None = None,
     ) -> list[str]:  # UC-2.3 | PLAN-4.1
         """
         Collect unique repository names.
@@ -323,6 +375,7 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
             pull_requests: List of PRs
             issues: List of issues
             reviews: List of reviews
+            releases: List of releases
 
         Returns:
             list[str]: Sorted list of unique repository names
@@ -346,6 +399,11 @@ class DataAggregator:  # UC-2.3, UC-7.1 | PLAN-4.1
 
         for review in reviews:
             repo = review.get("repository", "")
+            if repo:
+                repos.add(repo)
+
+        for release in (releases or []):
+            repo = release.get("repository", "")
             if repo:
                 repos.add(repo)
 

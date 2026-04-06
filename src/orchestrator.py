@@ -73,10 +73,12 @@ from .fetchers.pull_requests import PullRequestsFetcher
 from .fetchers.issues import IssuesFetcher
 from .fetchers.reviews import ReviewsFetcher
 from .fetchers.comments import CommentsFetcher
+from .fetchers.releases import ReleasesFetcher
 from .processors.aggregator import DataAggregator, AggregatedData
 from .processors.metrics import MetricsCalculator  # UC-7.1 | PLAN-3.7
 from .reporters.json_report import JsonReporter
 from .reporters.markdown_report import MarkdownReporter
+from .verifier import ReportVerifier
 
 if TYPE_CHECKING:
     from .utils.logger import Logger
@@ -131,6 +133,7 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
         output_dir: str | None = None,
         dry_run: bool = False,
         no_cache: bool = False,
+        verify: bool = False,
     ) -> dict[str, Any]:  # UC-2.5, UC-3.1, UC-4.1, UC-6.1, UC-8.1 | PLAN-3.1
         """
         Run the full report generation pipeline.
@@ -144,6 +147,7 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
             output_dir: Output directory override  # UC-6.1 | PLAN-3.6
             dry_run: If True, show what would be fetched without fetching
             no_cache: If True, disable caching  # UC-8.1 | PLAN-3.5
+            verify: If True, verify report data against GitHub API after generation
 
         Returns:
             dict: Result with generated file paths and summary
@@ -237,6 +241,18 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
             # Step 11: Run shutdown cleanup (if enabled)  # UC-10.1, UC-11.1 | PLAN-3.9, 3.10
             self._run_shutdown_cleanup()
 
+            # Step 12: Verify report data (if requested)
+            if verify:
+                self._log_info("Verifying report data against GitHub API...")
+                verifier = ReportVerifier(self.gh_client, self._logger, sample_size=5)
+                verification = verifier.verify(aggregated)
+                result["verification"] = verification.to_dict()
+                if verification.passed:
+                    self._log_info("Verification: All checks passed")
+                else:
+                    self._log_info(f"Verification: {verification.failed_count} check(s) failed")
+                    self._log_info(verification.summary())
+
             # Set result
             result["success"] = True
             result["summary"] = aggregated.get_summary()
@@ -275,6 +291,7 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
             metrics_config.engagement_metrics,
             metrics_config.productivity_patterns,
             metrics_config.reaction_breakdown,
+            metrics_config.release_metrics,
         ])
 
     def _initialize(
@@ -360,6 +377,10 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
         self._log_info("Fetching PRs with activity in period...")
         updated_prs = prs_fetcher.fetch_prs_updated_in_period(start_date, end_date)
 
+        # Fetch PRs merged in period (catches PRs created earlier but merged now)
+        self._log_info("Fetching PRs merged in period...")
+        merged_prs = prs_fetcher.fetch_prs_merged_in_period(start_date, end_date)
+
         # Fetch open PRs with activity in period (GitHub's updated_at is unreliable)
         self._log_info("Checking open PRs for activity in period...")
         open_prs_with_activity = prs_fetcher.fetch_open_prs_with_activity(start_date, end_date)
@@ -367,7 +388,7 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
         # Merge and deduplicate PRs
         seen_pr_keys: set[str] = set()
         all_prs: list[dict] = []
-        for pr in pull_requests + updated_prs + open_prs_with_activity:
+        for pr in pull_requests + updated_prs + merged_prs + open_prs_with_activity:
             pr_key = f"{pr.get('repository')}#{pr.get('number')}"
             if pr_key not in seen_pr_keys:
                 seen_pr_keys.add(pr_key)
@@ -406,6 +427,19 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
         self._log_info("Fetching issues...")
         issues = issues_fetcher.fetch_period(start_date, end_date)
 
+        # Also fetch issues updated in period (catches issues created earlier but closed/updated now)
+        updated_issues = issues_fetcher.fetch_issues_updated_in_period(start_date, end_date)
+
+        # Merge and deduplicate issues
+        seen_issue_keys: set[str] = set()
+        all_issues: list[dict] = []
+        for issue in issues + updated_issues:
+            issue_key = f"{issue.get('repository')}#{issue.get('number')}"
+            if issue_key not in seen_issue_keys:
+                seen_issue_keys.add(issue_key)
+                all_issues.append(issue)
+        issues = all_issues
+
         # Fetch comments directly via API (more complete than events)
         self._log_info("Fetching comments...")
         api_comments = comments_fetcher.fetch_period(start_date, end_date)
@@ -418,22 +452,22 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
             )
             api_comments.extend(review_comments)
 
-        # Merge comments from API with comments from events, deduplicating
-        seen_comment_ids: set[str] = set()
+        # Merge comments from API with comments from events, deduplicating by URL
+        seen_comment_urls: set[str] = set()
         all_comments: list[dict] = []
 
         # API comments take priority (more complete data)
         for comment in api_comments:
-            comment_id = str(comment.get("id", "")) or comment.get("url", "")
-            if comment_id and comment_id not in seen_comment_ids:
-                seen_comment_ids.add(comment_id)
+            comment_url = comment.get("url", "")
+            if comment_url and comment_url not in seen_comment_urls:
+                seen_comment_urls.add(comment_url)
                 all_comments.append(comment)
 
-        # Add event-based comments if not already seen
+        # Add event-based comments if not already seen (by URL)
         for comment in event_comments:
-            comment_id = str(comment.get("id", "")) or comment.get("url", "")
-            if comment_id and comment_id not in seen_comment_ids:
-                seen_comment_ids.add(comment_id)
+            comment_url = comment.get("url", "")
+            if comment_url and comment_url not in seen_comment_urls:
+                seen_comment_urls.add(comment_url)
                 all_comments.append(comment)
 
         if api_comments:
@@ -456,6 +490,32 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
         if pr_commits:
             self._log_info(f"Added {len(pr_commits)} commits from unmerged PRs")
 
+        # Fetch releases for discovered repos
+        if self.settings.metrics.release_metrics:
+            self._log_info("Fetching releases...")
+            releases_fetcher = ReleasesFetcher(self.gh_client, config, self.username, self._logger)
+            # Collect repos from all fetched data
+            discovered_repos: set[str] = set()
+            for item in all_commits:
+                repo = item.get("repository", "")
+                if repo:
+                    discovered_repos.add(repo)
+            for item in pull_requests:
+                repo = item.get("repository", "")
+                if repo:
+                    discovered_repos.add(repo)
+            for item in issues:
+                repo = item.get("repository", "")
+                if repo:
+                    discovered_repos.add(repo)
+            for item in reviews:
+                repo = item.get("repository", "")
+                if repo:
+                    discovered_repos.add(repo)
+            releases = releases_fetcher.fetch_for_repos(sorted(discovered_repos), start_date, end_date)
+        else:
+            releases = []
+
         return {
             "commits": all_commits,
             "pull_requests": pull_requests,
@@ -465,6 +525,7 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
             "reviewed_prs": reviewed_prs,  # PRs the user reviewed (for review turnaround)
             "comments": all_comments,  # Merged from API + events
             "events": events,  # UC-7.1 | PLAN-3.7 - needed for productivity patterns
+            "releases": releases,
         }
 
     def _apply_repo_filters(
@@ -531,6 +592,7 @@ class ReportOrchestrator:  # UC-2.5, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-7.1, UC-
             reactions=None,  # Reactions not currently fetched
             reviews_on_authored_prs=reviews_on_authored_prs,  # For PR metrics
             reviewed_prs=reviewed_prs,  # For review turnaround calc
+            releases=data.releases,
         )
 
         return metrics

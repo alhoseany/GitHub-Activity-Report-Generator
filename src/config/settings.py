@@ -191,6 +191,7 @@ class MetricsConfig:  # UC-7.1 | PLAN-3.7
     engagement_metrics: bool = True
     productivity_patterns: bool = True
     reaction_breakdown: bool = True
+    release_metrics: bool = True
 
 
 # =============================================================================

@@ -13,6 +13,7 @@ This package provides fetchers for different types of GitHub activity data:
 - pull_requests.py: PullRequestsFetcher using gh search prs
 - issues.py: IssuesFetcher using gh search issues
 - reviews.py: ReviewsFetcher for PR reviews
+- releases.py: ReleasesFetcher for releases and tags
 
 Features:
 - Adaptive fetching (week -> day granularity for high activity)
@@ -30,6 +31,7 @@ from .commits import CommitsFetcher
 from .pull_requests import PullRequestsFetcher
 from .issues import IssuesFetcher
 from .reviews import ReviewsFetcher
+from .releases import ReleasesFetcher
 
 __all__ = [
     "BaseFetcher",
@@ -38,4 +40,5 @@ __all__ = [
     "PullRequestsFetcher",
     "IssuesFetcher",
     "ReviewsFetcher",
+    "ReleasesFetcher",
 ]

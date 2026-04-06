@@ -271,3 +271,110 @@ class TestDataAggregator:  # UC-13.1 | PLAN-4
         )
 
         assert isinstance(result, AggregatedData)
+
+
+class TestFilterPrsByDateBugFixes:
+    """Tests for PR date filtering fixes — PRs merged/updated in period but created before."""
+
+    def test_filter_prs_by_date_keeps_merged_in_period(self):
+        """PR created before period but merged within it should be kept."""
+        aggregator = DataAggregator("testuser", date(2026, 3, 1), date(2026, 3, 31))
+        prs = [{"number": 1, "repository": "org/repo", "created_at": "2026-01-08T00:00:00Z", "merged_at": "2026-03-18T00:00:00Z"}]
+        result = aggregator._filter_prs_by_date(prs)
+        assert len(result) == 1
+
+    def test_filter_prs_by_date_keeps_updated_in_period(self):
+        """PR created before period but updated within it should be kept."""
+        aggregator = DataAggregator("testuser", date(2026, 3, 1), date(2026, 3, 31))
+        prs = [{"number": 1, "repository": "org/repo", "created_at": "2026-01-08T00:00:00Z", "updated_at": "2026-03-15T00:00:00Z"}]
+        result = aggregator._filter_prs_by_date(prs)
+        assert len(result) == 1
+
+    def test_filter_prs_by_date_excludes_fully_outside(self):
+        """PR with all dates outside period should be excluded."""
+        aggregator = DataAggregator("testuser", date(2026, 3, 1), date(2026, 3, 31))
+        prs = [{"number": 1, "repository": "org/repo", "created_at": "2025-12-01T00:00:00Z", "merged_at": "2025-12-15T00:00:00Z"}]
+        result = aggregator._filter_prs_by_date(prs)
+        assert len(result) == 0
+
+
+class TestFilterIssuesByDateBugFixes:
+    """Tests for issue date filtering fixes — issues closed/updated in period but created before."""
+
+    def test_filter_issues_by_date_keeps_closed_in_period(self):
+        """Issue created before period but closed within it should be kept."""
+        aggregator = DataAggregator("testuser", date(2026, 3, 1), date(2026, 3, 31))
+        issues = [{"number": 1, "repository": "org/repo", "created_at": "2025-11-01T00:00:00Z", "closed_at": "2026-03-12T00:00:00Z"}]
+        result = aggregator._filter_issues_by_date(issues)
+        assert len(result) == 1
+
+    def test_filter_issues_by_date_keeps_updated_in_period(self):
+        """Issue created before period but updated within it should be kept."""
+        aggregator = DataAggregator("testuser", date(2026, 3, 1), date(2026, 3, 31))
+        issues = [{"number": 1, "repository": "org/repo", "created_at": "2025-06-01T00:00:00Z", "updated_at": "2026-03-05T00:00:00Z"}]
+        result = aggregator._filter_issues_by_date(issues)
+        assert len(result) == 1
+
+    def test_filter_issues_by_date_excludes_fully_outside(self):
+        """Issue with all dates outside period should be excluded."""
+        aggregator = DataAggregator("testuser", date(2026, 3, 1), date(2026, 3, 31))
+        issues = [{"number": 1, "repository": "org/repo", "created_at": "2025-06-01T00:00:00Z", "closed_at": "2025-07-01T00:00:00Z"}]
+        result = aggregator._filter_issues_by_date(issues)
+        assert len(result) == 0
+
+
+class TestTotalPrsReviewedBugFix:
+    """Test that total_prs_reviewed uses (repository, pr_number) for uniqueness."""
+
+    def test_same_pr_number_different_repos_counted_separately(self):
+        """PR #42 in repo-a and PR #42 in repo-b should count as 2."""
+        data = AggregatedData(
+            reviews=[
+                {"pr_number": 42, "repository": "org/repo-a", "state": "APPROVED", "submitted_at": "2026-03-01"},
+                {"pr_number": 42, "repository": "org/repo-b", "state": "APPROVED", "submitted_at": "2026-03-01"},
+            ]
+        )
+        assert data.total_prs_reviewed == 2
+
+    def test_same_pr_same_repo_counted_once(self):
+        """Multiple reviews on same PR in same repo should count as 1."""
+        data = AggregatedData(
+            reviews=[
+                {"pr_number": 42, "repository": "org/repo-a", "state": "CHANGES_REQUESTED", "submitted_at": "2026-03-01"},
+                {"pr_number": 42, "repository": "org/repo-a", "state": "APPROVED", "submitted_at": "2026-03-02"},
+            ]
+        )
+        assert data.total_prs_reviewed == 1
+
+
+class TestReleasesInAggregatedData:
+    """Tests for releases field in AggregatedData."""
+
+    def test_releases_contributed_to_counts_commits(self):
+        """Releases with user commits should be counted."""
+        data = AggregatedData(
+            releases=[
+                {"tag_name": "1.0", "user_commits": 5, "user_reviewed_prs": 0},
+                {"tag_name": "2.0", "user_commits": 0, "user_reviewed_prs": 0},
+            ]
+        )
+        assert data.releases_contributed_to == 1
+
+    def test_releases_contributed_to_counts_reviews(self):
+        """Releases with user reviews should be counted."""
+        data = AggregatedData(
+            releases=[
+                {"tag_name": "1.0", "user_commits": 0, "user_reviewed_prs": 3},
+                {"tag_name": "2.0", "user_commits": 0, "user_reviewed_prs": 0},
+            ]
+        )
+        assert data.releases_contributed_to == 1
+
+    def test_releases_in_summary(self):
+        """Summary should include releases_contributed_to."""
+        data = AggregatedData(
+            releases=[{"tag_name": "1.0", "user_commits": 1, "user_reviewed_prs": 0}]
+        )
+        summary = data.get_summary()
+        assert "releases_contributed_to" in summary
+        assert summary["releases_contributed_to"] == 1

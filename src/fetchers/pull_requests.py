@@ -131,7 +131,7 @@ class PullRequestsFetcher(BaseFetcher):  # UC-2.2 | PLAN-3.4
             list[dict]: PRs reviewed within the date range
         """
         # Use GitHub Search API directly via gh api
-        query = f"reviewed-by:{self.username} type:pr created:{start.isoformat()}..{end.isoformat()}"
+        query = f"reviewed-by:{self.username} type:pr updated:{start.isoformat()}..{end.isoformat()}"
         encoded_query = quote(query, safe='')
         endpoint = f"/search/issues?q={encoded_query}&per_page=100"
 
@@ -281,6 +281,57 @@ class PullRequestsFetcher(BaseFetcher):  # UC-2.2 | PLAN-3.4
                 "number": item.get("number"),
                 "title": item.get("title", ""),
                 "state": state,
+                "repository": repo_name,
+                "created_at": item.get("created_at"),
+                "updated_at": item.get("updated_at"),
+                "merged_at": merged_at,
+                "closed_at": item.get("closed_at"),
+                "url": item.get("html_url", ""),
+            })
+
+        return prs
+
+    def fetch_prs_merged_in_period(
+        self,
+        start: date,
+        end: date
+    ) -> list[dict[str, Any]]:  # UC-2.2 | PLAN-3.4
+        """
+        Fetch PRs by the user that were merged in the period.
+
+        This catches PRs created earlier but merged during the reporting period.
+
+        Args:
+            start: Start date
+            end: End date
+
+        Returns:
+            list[dict]: PRs merged within the date range
+        """
+        query = f"author:{self.username} type:pr merged:{start.isoformat()}..{end.isoformat()}"
+        encoded_query = quote(query, safe='')
+        endpoint = f"/search/issues?q={encoded_query}&per_page=100"
+
+        try:
+            result = self.gh.api(endpoint)
+            items = result.get("items", []) if isinstance(result, dict) else []
+        except Exception as e:
+            if self.logger:
+                self.logger.warning(f"Failed to fetch merged PRs: {e}")
+            return []
+
+        prs: list[dict[str, Any]] = []
+        for item in items:
+            repo_url = item.get("repository_url", "")
+            repo_name = "/".join(repo_url.split("/")[-2:]) if repo_url else ""
+
+            pr_data = item.get("pull_request", {})
+            merged_at = pr_data.get("merged_at") if pr_data else None
+
+            prs.append({
+                "number": item.get("number"),
+                "title": item.get("title", ""),
+                "state": "merged" if merged_at else item.get("state", ""),
                 "repository": repo_name,
                 "created_at": item.get("created_at"),
                 "updated_at": item.get("updated_at"),

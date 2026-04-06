@@ -305,3 +305,70 @@ class TestCreateMetricsCalculator:  # UC-13.1 | PLAN-4
 
         assert isinstance(calculator, MetricsCalculator)
         assert calculator.config == metrics_config
+
+
+class TestReleaseMetrics:
+    """Tests for release metrics calculation."""
+
+    def test_calculate_release_metrics_empty(self, metrics_config):
+        """Release metrics with empty releases list should return None."""
+        calculator = MetricsCalculator(metrics_config)
+        result = calculator.calculate_release_metrics([])
+        assert result is None
+
+    def test_calculate_release_metrics_disabled(self):
+        """Release metrics when disabled should return None."""
+        config = MetricsConfig(release_metrics=False)
+        calculator = MetricsCalculator(config)
+        releases = [{"user_commits": 1, "user_reviewed_prs": 0, "contribution_weight": 50.0}]
+        result = calculator.calculate_release_metrics(releases)
+        assert result is None
+
+    def test_calculate_release_metrics_counts(self, metrics_config):
+        """Release metrics should count releases contributed to vs total."""
+        calculator = MetricsCalculator(metrics_config)
+        releases = [
+            {
+                "tag_name": "1.0",
+                "repository": "org/r",
+                "user_commits": 5,
+                "total_commits": 10,
+                "user_reviewed_prs": 2,
+                "total_prs": 4,
+                "contribution_weight": 50.0,
+            },
+            {
+                "tag_name": "2.0",
+                "repository": "org/r",
+                "user_commits": 0,
+                "total_commits": 20,
+                "user_reviewed_prs": 0,
+                "total_prs": 5,
+                "contribution_weight": 0.0,
+            },
+        ]
+        result = calculator.calculate_release_metrics(releases)
+        assert result["releases_contributed_to"] == 1
+        assert result["total_releases_in_period"] == 2
+
+    def test_calculate_release_metrics_avg_weight(self, metrics_config):
+        """Average contribution weight should be the mean over contributed releases."""
+        calculator = MetricsCalculator(metrics_config)
+        releases = [
+            {
+                "tag_name": "1.0",
+                "repository": "org/r",
+                "user_commits": 1,
+                "user_reviewed_prs": 1,
+                "contribution_weight": 40.0,
+            },
+            {
+                "tag_name": "2.0",
+                "repository": "org/r",
+                "user_commits": 1,
+                "user_reviewed_prs": 0,
+                "contribution_weight": 60.0,
+            },
+        ]
+        result = calculator.calculate_release_metrics(releases)
+        assert result["avg_contribution_weight"] == 50.0

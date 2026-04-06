@@ -174,6 +174,64 @@ class IssuesFetcher(BaseFetcher):  # UC-2.2 | PLAN-3.4
 
         return issues
 
+    def fetch_issues_updated_in_period(
+        self,
+        start: date,
+        end: date
+    ) -> list[dict[str, Any]]:  # UC-2.2 | PLAN-3.4
+        """
+        Fetch issues by the user that were updated in the period.
+
+        This catches issues created earlier but closed or updated
+        during the reporting period.
+
+        Args:
+            start: Start date
+            end: End date
+
+        Returns:
+            list[dict]: Issues updated within the date range
+        """
+        query = f"author:{self.username} type:issue updated:{start.isoformat()}..{end.isoformat()}"
+        encoded_query = quote(query, safe='')
+        endpoint = f"/search/issues?q={encoded_query}&per_page=100"
+
+        try:
+            result = self.gh.api(endpoint)
+            items = result.get("items", []) if isinstance(result, dict) else []
+        except Exception as e:
+            if self.logger:
+                self.logger.warning(f"Failed to fetch updated issues: {e}")
+            return []
+
+        issues: list[dict[str, Any]] = []
+        for item in items:
+            repo_url = item.get("repository_url", "")
+            repo_name = "/".join(repo_url.split("/")[-2:]) if repo_url else ""
+
+            labels = item.get("labels", [])
+            if isinstance(labels, list):
+                label_names = [
+                    l.get("name", "") if isinstance(l, dict) else str(l)
+                    for l in labels
+                ]
+            else:
+                label_names = []
+
+            issues.append({
+                "number": item.get("number"),
+                "title": item.get("title", ""),
+                "state": item.get("state", ""),
+                "repository": repo_name,
+                "created_at": item.get("created_at"),
+                "updated_at": item.get("updated_at"),
+                "closed_at": item.get("closed_at"),
+                "url": item.get("html_url", ""),
+                "labels": label_names,
+            })
+
+        return issues
+
     def normalize_issue(
         self,
         issue: dict[str, Any]

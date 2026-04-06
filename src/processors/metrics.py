@@ -548,6 +548,46 @@ class MetricsCalculator:  # UC-7.1, UC-7.1, UC-7.1 | PLAN-3.7.3
 
         return breakdown
 
+    def calculate_release_metrics(
+        self,
+        releases: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
+        """Calculate release contribution metrics.
+
+        Args:
+            releases: List of release dictionaries
+
+        Returns:
+            Dictionary with release metrics if release_metrics enabled and releases exist,
+            None otherwise
+        """
+        if not self.config.release_metrics or not releases:
+            return None
+
+        contributed = [r for r in releases
+                       if r.get("user_commits", 0) > 0 or r.get("user_reviewed_prs", 0) > 0]
+
+        weights = [r.get("contribution_weight", 0) for r in contributed]
+        avg_weight = sum(weights) / len(weights) if weights else 0
+
+        return {
+            "releases_contributed_to": len(contributed),
+            "total_releases_in_period": len(releases),
+            "avg_contribution_weight": round(avg_weight, 1),
+            "releases": [
+                {
+                    "tag_name": r.get("tag_name", ""),
+                    "repository": r.get("repository", ""),
+                    "user_commits": r.get("user_commits", 0),
+                    "total_commits": r.get("total_commits", 0),
+                    "user_reviewed_prs": r.get("user_reviewed_prs", 0),
+                    "total_prs": r.get("total_prs", 0),
+                    "contribution_weight": r.get("contribution_weight", 0),
+                }
+                for r in releases
+            ],
+        }
+
     def calculate_all(
         self,
         prs: list[dict[str, Any]],
@@ -557,7 +597,8 @@ class MetricsCalculator:  # UC-7.1, UC-7.1, UC-7.1 | PLAN-3.7.3
         events: list[dict[str, Any]],
         reactions: list[dict[str, Any]] | None = None,
         reviews_on_authored_prs: list[dict[str, Any]] | None = None,
-        reviewed_prs: list[dict[str, Any]] | None = None
+        reviewed_prs: list[dict[str, Any]] | None = None,
+        releases: list[dict[str, Any]] | None = None
     ) -> dict[str, Any]:  # UC-7.1 | PLAN-3.7.3
         """
         Calculate all metrics and return as a dictionary.
@@ -574,6 +615,7 @@ class MetricsCalculator:  # UC-7.1, UC-7.1, UC-7.1 | PLAN-3.7.3
             reactions: Optional list of reactions
             reviews_on_authored_prs: Reviews by others on user's PRs
             reviewed_prs: PRs that the user reviewed (for review turnaround calc)
+            releases: Optional list of release dictionaries
 
         Returns:
             Dictionary with all calculated metrics
@@ -609,6 +651,11 @@ class MetricsCalculator:  # UC-7.1, UC-7.1, UC-7.1 | PLAN-3.7.3
             reaction_breakdown = self.calculate_reaction_breakdown(reactions)
             if reaction_breakdown:
                 result["reaction_breakdown"] = reaction_breakdown.to_dict()
+
+        # Release Metrics
+        release_metrics = self.calculate_release_metrics(releases or [])
+        if release_metrics:
+            result["release_metrics"] = release_metrics
 
         return result
 

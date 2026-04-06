@@ -70,6 +70,7 @@ CLI (generate_report.py)
             ├── DataAggregator - combine and deduplicate data
             ├── MetricsCalculator - compute statistics
             ├── Reporters - generate JSON/Markdown output
+            ├── ReportVerifier - spot-check data against GitHub API (--verify)
             └── Cleaners - log and report cleanup
 ```
 
@@ -89,10 +90,14 @@ CLI (generate_report.py)
 **Fetchers (`src/fetchers/`):**
 - `base.py` - `BaseFetcher` with adaptive week/day fetching strategy
 - `commits.py`, `pull_requests.py`, `issues.py`, `reviews.py`, `events.py`, `comments.py` - Specific data fetchers
+- `releases.py` - Release contribution tracking with tiered detection (Releases API → Tags fallback)
 
 **Processors (`src/processors/`):**
 - `aggregator.py` - `DataAggregator` combines fetched data, handles deduplication
 - `metrics.py` - `MetricsCalculator` computes PR metrics, review metrics, productivity patterns
+
+**Verification:**
+- `src/verifier.py` - `ReportVerifier` spot-checks report data against live GitHub API (commits, PRs, issues, reviews, releases)
 
 **Reporters (`src/reporters/`):**
 - `json_report.py` - Generates JSON reports validated against schema

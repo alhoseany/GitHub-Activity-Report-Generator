@@ -160,6 +160,12 @@ class MutuallyExclusiveOption(click.Option):  # UC-3.1 | PLAN-3.1
     default=False,
     help="Show what would be fetched without actually fetching"
 )
+@click.option(
+    "--verify",
+    is_flag=True,
+    default=False,
+    help="Verify report data against GitHub API after generation"
+)
 def main(
     user: str | None,
     month: int | None,
@@ -173,6 +179,7 @@ def main(
     no_cache: bool,
     log_level: str | None,
     dry_run: bool,
+    verify: bool,
 ) -> None:  # UC-2.1, UC-3.1, UC-4.1, UC-5.1, UC-6.1, UC-8.1, UC-9.1 | PLAN-3.1
     """
     Generate GitHub activity report for a user.
@@ -278,6 +285,7 @@ def main(
         output_dir=output_dir,  # UC-6.1 | PLAN-3.6
         dry_run=dry_run,
         no_cache=no_cache,  # UC-8.1 | PLAN-3.5
+        verify=verify,
     )
 
     # Output results
@@ -301,6 +309,18 @@ def main(
                 click.echo(f"  PRs Merged: {summary.get('total_prs_merged', 0)}")
                 click.echo(f"  Issues: {summary.get('total_issues_opened', 0)}")
                 click.echo(f"  Reviews: {summary.get('total_prs_reviewed', 0)}")
+
+            # Show verification results
+            verification = result.get("verification")
+            if verification:
+                click.echo("")
+                status = "PASSED" if verification["passed"] else "FAILED"
+                click.echo(f"Verification: {status}")
+                for check in verification.get("checks", []):
+                    icon = "✓" if check["passed"] else "✗"
+                    click.echo(f"  {icon} {check['name']}: {check['checked'] - check['failed']}/{check['checked']}")
+                    for detail in check.get("details", []):
+                        click.echo(f"    - {detail}")
 
         sys.exit(0)
     else:
